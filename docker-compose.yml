@@ -1,0 +1,18 @@
+services:
+  mongo:
+    image: mongo:8
+    container_name: cinema-mongo
+    restart: unless-stopped
+    ports:
+      # 27018 на хості, щоб не конфліктувати з локально встановленим MongoDB на 27017
+      - '27018:27017'
+    volumes:
+      - mongodata:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.adminCommand("ping").ok']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mongodata:

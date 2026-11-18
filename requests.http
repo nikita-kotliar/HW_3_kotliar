@@ -1,0 +1,473 @@
+@baseUrl = http://localhost:3000
+@missingId = 665f1c2b9a1e4b3c2d1f0a9e
+
+########################################################
+# ФІЛЬМИ
+########################################################
+
+### Створити фільм 201
+# @name createFilm
+POST {{baseUrl}}/films
+Content-Type: application/json
+
+{
+  "title": "Dune: Part Two",
+  "durationMinutes": 166,
+  "releaseYear": 2024
+}
+
+### Створити другий фільм 201
+# @name createFilmToDelete
+POST {{baseUrl}}/films
+Content-Type: application/json
+
+{
+  "title": "Temporary film",
+  "durationMinutes": 90,
+  "releaseYear": 2020
+}
+
+### Помилка: поле відсутнє 400
+POST {{baseUrl}}/films
+Content-Type: application/json
+
+{
+  "title": "No duration",
+  "releaseYear": 2024
+}
+
+### Помилка: неправильний тип поля 400
+POST {{baseUrl}}/films
+Content-Type: application/json
+
+{
+  "title": "Wrong type",
+  "durationMinutes": "long",
+  "releaseYear": 2024
+}
+
+### Усі фільми 200
+GET {{baseUrl}}/films
+
+### Один фільм 200
+GET {{baseUrl}}/films/{{createFilm.response.body.id}}
+
+### Помилка: фільму не існує 404
+GET {{baseUrl}}/films/{{missingId}}
+
+### Помилка: id не є ObjectId 400
+GET {{baseUrl}}/films/not-an-objectid
+
+
+### Оновити фільм 200
+PATCH {{baseUrl}}/films/{{createFilm.response.body.id}}
+Content-Type: application/json
+
+{
+  "title": "Dune: Part Two (IMAX)"
+}
+
+### Помилка: неправильний тип поля при оновленні 400
+PATCH {{baseUrl}}/films/{{createFilm.response.body.id}}
+Content-Type: application/json
+
+{
+  "durationMinutes": -5
+}
+
+### Помилка: оновлення неіснуючого фільму 404
+PATCH {{baseUrl}}/films/{{missingId}}
+Content-Type: application/json
+
+{
+  "title": "Nobody"
+}
+
+### Помилка: оновлення з некоректним ObjectId 400
+PATCH {{baseUrl}}/films/123
+Content-Type: application/json
+
+{
+  "title": "Nobody"
+}
+
+### Видалити фільм без сеансів 204
+DELETE {{baseUrl}}/films/{{createFilmToDelete.response.body.id}}
+
+### Помилка: видалення неіснуючого фільму 404
+DELETE {{baseUrl}}/films/{{missingId}}
+
+### Помилка: видалення з некоректним ObjectId 400
+DELETE {{baseUrl}}/films/not-an-objectid
+
+########################################################
+# ЗАЛИ
+########################################################
+
+### Створити зал 3x5 201
+# @name createHall
+POST {{baseUrl}}/halls
+Content-Type: application/json
+
+{
+  "name": "Зал {{$randomInt 1 1000000}}",
+  "rows": 3,
+  "seatsPerRow": 5
+}
+
+### Створити другий зал 201
+# @name createHallToDelete
+POST {{baseUrl}}/halls
+Content-Type: application/json
+
+{
+  "name": "Малий зал {{$randomInt 1 1000000}}",
+  "rows": 2,
+  "seatsPerRow": 4
+}
+
+### Помилка: поле відсутнє 400
+POST {{baseUrl}}/halls
+Content-Type: application/json
+
+{
+  "name": "Без рядів",
+  "seatsPerRow": 5
+}
+
+### Помилка: неправильний тип поля 400
+POST {{baseUrl}}/halls
+Content-Type: application/json
+
+{
+  "name": "Текстові ряди",
+  "rows": "three",
+  "seatsPerRow": 5
+}
+
+### Помилка: число не ціле додатне 400
+POST {{baseUrl}}/halls
+Content-Type: application/json
+
+{
+  "name": "Дробовий зал",
+  "rows": 2.5,
+  "seatsPerRow": 0
+}
+
+### Помилка: зал з такою назвою вже існує 409
+POST {{baseUrl}}/halls
+Content-Type: application/json
+
+{
+  "name": "{{createHall.response.body.name}}",
+  "rows": 1,
+  "seatsPerRow": 1
+}
+
+### Усі зали 200
+GET {{baseUrl}}/halls
+
+### Зал з переліком місць (15 елементів) 200
+GET {{baseUrl}}/halls/{{createHall.response.body.id}}
+
+### Помилка: залу не існує 404
+GET {{baseUrl}}/halls/{{missingId}}
+
+### Помилка: зал з некоректним ObjectId 400
+GET {{baseUrl}}/halls/xyz
+
+### Видалити зал без сеансів 204
+DELETE {{baseUrl}}/halls/{{createHallToDelete.response.body.id}}
+
+### Помилка: видалення неіснуючого залу 404
+DELETE {{baseUrl}}/halls/{{missingId}}
+
+### Помилка: видалення залу з некоректним ObjectId 400
+DELETE {{baseUrl}}/halls/xyz
+
+########################################################
+# СЕАНСИ
+########################################################
+
+### Створити сеанс 201
+# @name createShowing
+POST {{baseUrl}}/showings
+Content-Type: application/json
+
+{
+  "filmId": "{{createFilm.response.body.id}}",
+  "hallId": "{{createHall.response.body.id}}",
+  "startsAt": "2030-05-01T18:30:00Z",
+  "price": 12500
+}
+
+### Створити ранковий сеанс того ж дня (буде першим у списку) 201
+# @name createMorningShowing
+POST {{baseUrl}}/showings
+Content-Type: application/json
+
+{
+  "filmId": "{{createFilm.response.body.id}}",
+  "hallId": "{{createHall.response.body.id}}",
+  "startsAt": "2030-05-01T10:00:00Z",
+  "price": 8000
+}
+
+### Помилка: фільму не існує 400
+POST {{baseUrl}}/showings
+Content-Type: application/json
+
+{
+  "filmId": "{{missingId}}",
+  "hallId": "{{createHall.response.body.id}}",
+  "startsAt": "2030-05-01T18:30:00Z",
+  "price": 12500
+}
+
+### Помилка: залу не існує 400
+POST {{baseUrl}}/showings
+Content-Type: application/json
+
+{
+  "filmId": "{{createFilm.response.body.id}}",
+  "hallId": "{{missingId}}",
+  "startsAt": "2030-05-01T18:30:00Z",
+  "price": 12500
+}
+
+### Помилка: filmId і hallId не є ObjectId 400
+POST {{baseUrl}}/showings
+Content-Type: application/json
+
+{
+  "filmId": "film-1",
+  "hallId": "hall-1",
+  "startsAt": "2030-05-01T18:30:00Z",
+  "price": 12500
+}
+
+### Помилка: startsAt не є датою ISO 8601 400
+POST {{baseUrl}}/showings
+Content-Type: application/json
+
+{
+  "filmId": "{{createFilm.response.body.id}}",
+  "hallId": "{{createHall.response.body.id}}",
+  "startsAt": "tomorrow evening",
+  "price": 12500
+}
+
+### Помилка: startsAt у минулому 400
+POST {{baseUrl}}/showings
+Content-Type: application/json
+
+{
+  "filmId": "{{createFilm.response.body.id}}",
+  "hallId": "{{createHall.response.body.id}}",
+  "startsAt": "2020-01-01T10:00:00Z",
+  "price": 12500
+}
+
+### Помилка: price не ціле додатне 400
+POST {{baseUrl}}/showings
+Content-Type: application/json
+
+{
+  "filmId": "{{createFilm.response.body.id}}",
+  "hallId": "{{createHall.response.body.id}}",
+  "startsAt": "2030-05-01T18:30:00Z",
+  "price": 125.5
+}
+
+### Перша сторінка сеансів (page=1, limit=20, sort=asc за замовчуванням) 200
+GET {{baseUrl}}/showings
+
+### Посторінкова видача: 1 запис на сторінку, друга сторінка 200
+GET {{baseUrl}}/showings?page=2&limit=1
+
+### Сортування за спаданням часу початку 200
+GET {{baseUrl}}/showings?sort=desc
+
+### Фільтр за фільмом і датою 200
+GET {{baseUrl}}/showings?filmId={{createFilm.response.body.id}}&date=2030-05-01&sort=asc&page=1&limit=10
+
+### Фільтр за датою без сеансів 200, items: [], total: 0
+GET {{baseUrl}}/showings?date=2030-05-02&filmId={{createFilm.response.body.id}}
+
+### Помилка: page не ціле число 400
+GET {{baseUrl}}/showings?page=1.5
+
+### Помилка: page менше 1 400
+GET {{baseUrl}}/showings?page=0
+
+### Помилка: limit більше 100 400
+GET {{baseUrl}}/showings?limit=101
+
+### Помилка: limit не число 400
+GET {{baseUrl}}/showings?limit=ten
+
+### Помилка: sort має інше значення 400
+GET {{baseUrl}}/showings?sort=up
+
+### Помилка: date не у форматі YYYY-MM-DD 400
+GET {{baseUrl}}/showings?date=01.05.2030
+
+### Помилка: filmId не є ObjectId 400
+GET {{baseUrl}}/showings?filmId=123
+
+### Один сеанс 200
+GET {{baseUrl}}/showings/{{createShowing.response.body.id}}
+
+### Помилка: сеансу не існує 404
+GET {{baseUrl}}/showings/{{missingId}}
+
+### Помилка: сеанс з некоректним ObjectId 400
+GET {{baseUrl}}/showings/abc
+
+### Схема місць сеансу (усі вільні) 200
+GET {{baseUrl}}/showings/{{createShowing.response.body.id}}/seats
+
+### Помилка: схема місць неіснуючого сеансу 404
+GET {{baseUrl}}/showings/{{missingId}}/seats
+
+### Помилка: схема місць сеансу з некоректним ObjectId 400
+GET {{baseUrl}}/showings/abc/seats
+
+### Помилка: видалення фільму, на який посилається сеанс 409
+DELETE {{baseUrl}}/films/{{createFilm.response.body.id}}
+
+### Помилка: видалення залу, на який посилається сеанс 409
+DELETE {{baseUrl}}/halls/{{createHall.response.body.id}}
+
+########################################################
+# БРОНЮВАННЯ
+########################################################
+
+### Забронювати два місця 201, totalPrice = 25000
+# @name createBooking
+POST {{baseUrl}}/showings/{{createShowing.response.body.id}}/bookings
+Content-Type: application/json
+
+{
+  "seats": [
+    { "row": 1, "seat": 3 },
+    { "row": 1, "seat": 4 }
+  ]
+}
+
+### Помилка: сеансу не існує 404
+POST {{baseUrl}}/showings/{{missingId}}/bookings
+Content-Type: application/json
+
+{
+  "seats": [{ "row": 1, "seat": 1 }]
+}
+
+### Помилка: некоректний ObjectId сеансу 400
+POST {{baseUrl}}/showings/abc/bookings
+Content-Type: application/json
+
+{
+  "seats": [{ "row": 1, "seat": 1 }]
+}
+
+### Помилка: порожній масив seats 400
+POST {{baseUrl}}/showings/{{createShowing.response.body.id}}/bookings
+Content-Type: application/json
+
+{
+  "seats": []
+}
+
+### Помилка: елемент без seat 400
+POST {{baseUrl}}/showings/{{createShowing.response.body.id}}/bookings
+Content-Type: application/json
+
+{
+  "seats": [{ "row": 2 }]
+}
+
+### Помилка: місце повторюється в запиті 400
+POST {{baseUrl}}/showings/{{createShowing.response.body.id}}/bookings
+Content-Type: application/json
+
+{
+  "seats": [
+    { "row": 2, "seat": 2 },
+    { "row": 2, "seat": 2 }
+  ]
+}
+
+### Помилка: ряду немає в залі 400
+POST {{baseUrl}}/showings/{{createShowing.response.body.id}}/bookings
+Content-Type: application/json
+
+{
+  "seats": [{ "row": 4, "seat": 1 }]
+}
+
+### Помилка: місця немає в ряду 400
+POST {{baseUrl}}/showings/{{createShowing.response.body.id}}/bookings
+Content-Type: application/json
+
+{
+  "seats": [{ "row": 1, "seat": 6 }]
+}
+
+### Помилка: номер не ціле додатне 400
+POST {{baseUrl}}/showings/{{createShowing.response.body.id}}/bookings
+Content-Type: application/json
+
+{
+  "seats": [{ "row": 0, "seat": 1.5 }]
+}
+
+### Помилка: одне з місць уже зайняте 409 (місце 2:1 НЕ бронюється)
+POST {{baseUrl}}/showings/{{createShowing.response.body.id}}/bookings
+Content-Type: application/json
+
+{
+  "seats": [
+    { "row": 2, "seat": 1 },
+    { "row": 1, "seat": 4 }
+  ]
+}
+
+### Схема місць: зайняті лише 1:3 і 1:4, місце 2:1 вільне 200
+GET {{baseUrl}}/showings/{{createShowing.response.body.id}}/seats
+
+### Бронювання сеансу 200
+GET {{baseUrl}}/showings/{{createShowing.response.body.id}}/bookings
+
+### Помилка: бронювання неіснуючого сеансу 404
+GET {{baseUrl}}/showings/{{missingId}}/bookings
+
+### Помилка: бронювання сеансу з некоректним ObjectId 400
+GET {{baseUrl}}/showings/abc/bookings
+
+### Усі бронювання 200
+GET {{baseUrl}}/bookings
+
+### Скасувати бронювання 204
+DELETE {{baseUrl}}/bookings/{{createBooking.response.body.id}}
+
+### Помилка: бронювання не існує (вже скасоване) 404
+DELETE {{baseUrl}}/bookings/{{createBooking.response.body.id}}
+
+### Помилка: скасування з некоректним ObjectId 400
+DELETE {{baseUrl}}/bookings/abc
+
+### Після скасування місця знову вільні 200
+GET {{baseUrl}}/showings/{{createShowing.response.body.id}}/seats
+
+### Ті самі місця можна забронювати знову 201
+POST {{baseUrl}}/showings/{{createShowing.response.body.id}}/bookings
+Content-Type: application/json
+
+{
+  "seats": [
+    { "row": 1, "seat": 3 },
+    { "row": 1, "seat": 4 }
+  ]
+}
